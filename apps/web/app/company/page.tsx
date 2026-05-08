@@ -1,0 +1,6 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { Nav } from '@/components/Nav';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const auth=()=>({Authorization:`Bearer ${localStorage.getItem('mealcard_token')}`,'Content-Type':'application/json'});
+export default function Company(){const [employees,setEmployees]=useState<any[]>([]); const [amount,setAmount]=useState(10000); async function load(){const r=await fetch(`${API}/company/employees`,{headers:auth()}); const j=await r.json(); setEmployees(j.data||[])} useEffect(()=>{load()},[]); async function credit(id:string){await fetch(`${API}/company/employees/${id}/credit`,{method:'POST',headers:auth(),body:JSON.stringify({amount})}); load()} return <main className="shell"><Nav/><h1>Portail entreprise</h1><p className="muted">Gestion des salariés et dotations repas.</p><div className="card"><label>Montant à créditer</label><input type="number" value={amount} onChange={e=>setAmount(Number(e.target.value))}/><table className="table"><thead><tr><th>Salarié</th><th>Téléphone</th><th>Solde</th><th>Action</th></tr></thead><tbody>{employees.map(e=><tr key={e.id}><td>{e.firstName} {e.lastName}</td><td>{e.phone}</td><td>{e.wallets?.[0]?.balance||0} XOF</td><td><button className="btn" onClick={()=>credit(e.id)}>Créditer</button></td></tr>)}</tbody></table></div></main>}
