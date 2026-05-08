@@ -1,0 +1,17 @@
+{
+  "name": "mealcard-africa",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Plateforme B2B de gestion d'avantages repas en Afrique: portail entreprise, app salarié, app marchand et back-office admin.",
+  "workspaces": ["apps/api", "apps/web"],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/api & npm run dev --workspace apps/web",
+    "build": "npm run build --workspace apps/api && npm run build --workspace apps/web",
+    "lint": "npm run lint --workspace apps/web",
+    "api:dev": "npm run dev --workspace apps/api",
+    "web:dev": "npm run dev --workspace apps/web",
+    "db:migrate": "npm run db:migrate --workspace apps/api",
+    "db:seed": "npm run db:seed --workspace apps/api"
+  },
+  "engines": { "node": ">=20" }
+}
