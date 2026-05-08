@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole { ADMIN COMPANY_ADMIN EMPLOYEE MERCHANT_ADMIN MERCHANT_CASHIER }
+enum AccountStatus { PENDING ACTIVE SUSPENDED REJECTED }
+enum WalletType { EMPLOYEE MERCHANT PLATFORM_REVENUE SETTLEMENT_CLEARING COMPANY_PREFUNDING }
+enum TransactionStatus { PENDING SUCCESS FAILED CANCELLED REFUNDED }
+enum LedgerEntryDirection { DEBIT CREDIT }
+
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  passwordHash String
+  role UserRole
+  status AccountStatus @default(ACTIVE)
+  companyId String?
+  company Company? @relation(fields: [companyId], references: [id])
+  employeeId String? @unique
+  employee Employee? @relation(fields: [employeeId], references: [id])
+  merchantId String?
+  merchant Merchant? @relation(fields: [merchantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Company {
+  id String @id @default(cuid())
+  legalName String
+  tradingName String?
+  country String
+  taxId String?
+  status AccountStatus @default(PENDING)
+  users User[]
+  employees Employee[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Employee {
+  id String @id @default(cuid())
+  companyId String
+  company Company @relation(fields: [companyId], references: [id])
+  firstName String
+  lastName String
+  phone String
+  email String?
+  status AccountStatus @default(ACTIVE)
+  users User[]
+  wallets Wallet[]
+  transactions Transaction[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Merchant {
+  id String @id @default(cuid())
+  legalName String
+  tradingName String
+  country String
+  city String
+  category String
+  status AccountStatus @default(PENDING)
+  users User[]
+  wallets Wallet[]
+  paymentRequests PaymentRequest[]
+  transactions Transaction[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Wallet {
+  id String @id @default(cuid())
+  type WalletType
+  currency String @default("XOF")
+  balance Int @default(0)
+  employeeId String?
+  employee Employee? @relation(fields: [employeeId], references: [id])
+  merchantId String?
+  merchant Merchant? @relation(fields: [merchantId], references: [id])
+  entries LedgerEntry[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentRequest {
+  id String @id @default(cuid())
+  merchantId String
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+  amount Int
+  currency String @default("XOF")
+  status TransactionStatus @default(PENDING)
+  expiresAt DateTime
+  transaction Transaction?
+  qrPayload String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id String @id @default(cuid())
+  reference String @unique
+  paymentRequestId String? @unique
+  paymentRequest PaymentRequest? @relation(fields: [paymentRequestId], references: [id])
+  employeeId String?
+  employee Employee? @relation(fields: [employeeId], references: [id])
+  merchantId String?
+  merchant Merchant? @relation(fields: [merchantId], references: [id])
+  amount Int
+  platformFee Int @default(0)
+  currency String @default("XOF")
+  status TransactionStatus @default(PENDING)
+  entries LedgerEntry[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LedgerEntry {
+  id String @id @default(cuid())
+  transactionId String
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  walletId String
+  wallet Wallet @relation(fields: [walletId], references: [id])
+  direction LedgerEntryDirection
+  amount Int
+  currency String @default("XOF")
+  memo String?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+  actorId String?
+  action String
+  entity String
+  entityId String?
+  metadata Json?
+  createdAt DateTime @default(now())
+}
